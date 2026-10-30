@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Music Clicker</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-color: #1e1e1e;
+            --text-color: #ffffff;
+            --primary-glow: #ff007f;
+            --secondary-glow: #00f0ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            transition: background 0.5s ease;
+            position: relative;
+        }
+
+        #matrixCanvas, #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        body.dino-warp {
+            animation: spaceWarp 8s infinite alternate linear;
+        }
+
+        @keyframes spaceWarp {
+            0% { background-color: #0b001a; filter: hue-rotate(0deg); }
+            50% { background-color: #24001c; filter: hue-rotate(180deg); }
+            100% { background-color: #001f24; filter: hue-rotate(360deg); }
+        }
+
+        body.mog-overdrive {
+            animation: screenShake 0.15s infinite linear alternate, spaceWarp 3s infinite linear;
+        }
+
+        @keyframes screenShake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            100% { transform: translate(-1px, -2px) rotate(0.5deg); }
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            z-index: 2;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--primary-glow);
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+            font-size: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .dino-warp h1, .dino-warp .section-title, .mog-overdrive h1, .mog-overdrive .section-title {
+            animation: rainbowText 1.5s infinite linear;
+        }
+
+        body.mog-overdrive #score {
+            animation: glitchText 0.2s infinite steps(2);
+        }
+
+        @keyframes rainbowText {
+            0% { color: #ff007f; text-shadow: 0 0 15px #ff007f; }
+            33% { color: #00f0ff; text-shadow: 0 0 15px #00f0ff; }
+            66% { color: #ffcc00; text-shadow: 0 0 15px #ffcc00; }
+            100% { color: #ff007f; text-shadow: 0 0 15px #ff007f; }
+        }
+
+        @keyframes glitchText {
+            0% { color: #ff007f; text-shadow: 2px 2px #00f0ff, -2px -2px #ffcc00; }
+            50% { color: #00f0ff; text-shadow: -2px 2px #ff007f, 2px -2px #ffcc00; }
+            100% { color: #ffcc00; text-shadow: 2px -2px #00f0ff, -2px 2px #ff007f; }
+        }
+
+        .stats-panel {
+            background-color: var(--panel-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            transition: all 0.3s;
+        }
+
+        body.glass-ui .stats-panel, body.glass-ui .card, body.glass-ui .panel-box {
+            background: rgba(30, 30, 30, 0.65) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.3) !important;
+        }
+
+        .stat {
+            font-size: 1.2rem;
+            margin: 5px 0;
+            word-wrap: break-word;
+        }
+
+        #score {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: var(--secondary-glow);
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+        }
+
+        .click-btn {
+            background: linear-gradient(45deg, #ff007f, #7f00ff);
+            color: white;
+            border: none;
+            padding: 22px 45px;
+            font-size: 1.6rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(255, 0, 127, 0.4);
+            transition: transform 0.05s, box-shadow 0.1s;
+            margin-bottom: 30px;
+            outline: none;
+        }
+
+        .click-btn:active {
+            transform: scale(0.94);
+        }
+
+        .click-btn.hyper-pulse {
+            animation: hyperStrobe 0.3s infinite alternate;
+        }
+
+        @keyframes hyperStrobe {
+            0% { box-shadow: 0 0 15px #ff007f; filter: brightness(1); transform: scale(1); }
+            100% { box-shadow: 0 0 35px #00f0ff; filter: brightness(1.5); transform: scale(1.03); }
+        }
+
+        .section-title {
+            color: var(--secondary-glow);
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: var(--panel-color);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s;
+        }
+
+        .card h4 {
+            margin: 0 0 5px 0;
+            color: #fff;
+        }
+
+        .card p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .card button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .card button:hover:not(:disabled) {
+            background-color: var(--primary-glow);
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .card button:disabled {
+            background-color: #222;
+            color: #555;
+            border-color: #222;
+            cursor: not-allowed;
+        }
+
+        .panel-box {
+            background-color: #1a1a2e;
+            border: 1px solid var(--secondary-glow);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .achievement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .achievement-item {
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #111;
+            border-left: 4px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .achievement-item.unlocked {
+            border-left-color: var(--secondary-glow);
+            background-color: #16222f;
+        }
+
+        .achievement-status {
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #555;
+        }
+
+        .achievement-item.unlocked .achievement-status {
+            color: var(--secondary-glow);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .action-btn {
+            background-color: #252525;
+            color: white;
+            border: 1px solid #444;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background-color: #353535;
+            border-color: #666;
+        }
+
+        .code-panel input {
+            background-color: #111;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 1rem;
+            width: 60%;
+            margin-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .code-panel button {
+            background-color: var(--secondary-glow);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .code-panel button:hover {
+            box-shadow: 0 0 10px var(--secondary-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="container">
+        <h1>Ultimate Music Clicker</h1>
+        
+        <div class="stats-panel">
+            <div class="stat">Tracks Produced: <span id="score">0</span></div>
+            <div class="stat">Multiplier: <span id="multiplier">1x</span></div>
+            <div class="stat">Rebirths: <span id="rebirthCount">0</span></div>
+        </div>
+
+        <button class="click-btn" id="clickBtn" onclick="clickMusic()">PRODUCE BEAT!</button>
+
+        <div class="action-row">
+            <button class="action-btn" id="rebirthBtn" onclick="triggerRebirth()">Trigger Rebirth</button>
+            <button class="action-btn" onclick="toggleWarpEffect()">Warp Visuals</button>
+        </div>
+
+        <div class="section-title">Upgrades & Equipment</div>
+        <div class="grid">
+            <div class="card">
+                <div>
+                    <h4>Basic Synthesizer</h4>
+                    <p>Increases tracks per click.</p>
+                </div>
+                <button onclick="buyUpgrade(10n, 1n)">Cost: 10</button>
+            </div>
+            <div class="card">
+                <div>
+                    <h4>Studio Speakers</h4>
+                    <p>Substantial production boost.</p>
+                </div>
+                <button onclick="buyUpgrade(150n, 15n)">Cost: 150</button>
+            </div>
+        </div>
+
+        <div class="section-title">Achievements</div>
+        <div class="panel-box">
+            <div class="achievement-list">
+                <div class="achievement-item" id="ach1">
+                    <div>
+                        <strong>First Beat</strong>
+                        <p>Produce your very first music track.</p>
+                    </div>
+                    <span class="achievement-status" id="ach1Status">LOCKED</span>
+                </div>
+                <div class="achievement-item" id="ach2">
+                    <div>
+                        <strong>Speed of Light</strong>
+                        <p>Unlock the ultimate quindecillion power.</p>
+                    </div>
+                    <span class="achievement-status" id="ach2Status">LOCKED</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-box code-panel">
+            <h3>Redeem Secret Codes</h3>
+            <input type="text" id="codeInput" placeholder="Enter code here...">
+            <button onclick="redeemCode()">Redeem</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0n; 
+        let baseClickPower = 1n;
+        let rebirths = 0n;
+        
+        const gameCodes = {
+            "WELCOME": 100n,
+            "BOOST": 500n,
+            "THE flash": 100000000000000000000000000000000000000000000000n
+        };
+
+        function updateUI() {
+            document.getElementById('score').innerText = score.toLocaleString();
+            document.getElementById('multiplier').innerText = (baseClickPower * (rebirths + 1n)).toLocaleString() + "x";
+            document.getElementById('rebirthCount').innerText = rebirths.toString();
+            
+            if (score >= 1n) {
+                unlockAchievement('ach1', 'ach1Status');
+            }
+            if (score >= 100000000000000000000000000000000000000000000000n) {
+                unlockAchievement('ach2', 'ach2Status');
+                document.body.classList.add('glass-ui', 'mog-overdrive');
+                document.getElementById('clickBtn').classList.add('hyper-pulse');
+            }
+        }
+
+        function clickMusic() {
+            let increment = baseClickPower * (rebirths + 1n);
+            score += increment;
+            updateUI();
+        }
+
+        function buyUpgrade(cost, power) {
+            if (score >= cost) {
+                score -= cost;
+                baseClickPower += power;
+                updateUI();
+                alert("Upgrade purchased successfully!");
+            } else {
+                alert("Not enough tracks!");
+            }
+        }
+
+        function triggerRebirth() {
+            if (score >= 1000n) {
+                if (confirm("Are you sure you want to rebirth? This resets your score but builds massive permanent multiplier power!")) {
+                    rebirths += 1n;
+                    score = 0n;
+                    baseClickPower = 1n;
+                    updateUI();
+                }
+            } else {
+                alert("You need at least 1,000 tracks to rebirth!");
+            }
+        }
+
+        function toggleWarpEffect() {
+            document.body.classList.toggle('dino-warp');
+        }
+
+        function unlockAchievement(id, statusId) {
+            const item = document.getElementById(id);
+            const status = document.getElementById(statusId);
+            if (item && !item.classList.contains('unlocked')) {
+                item.classList.add('unlocked');
+                status.innerText = "UNLOCKED 🏆";
+            }
+        }
+
+        function redeemCode() {
+            const inputField = document.getElementById('codeInput');
+            const enteredCode = inputField.value.trim();
+
+            if (gameCodes.hasOwnProperty(enteredCode)) {
+                const reward = gameCodes[enteredCode];
+                score += reward;
+                alert(`Code successfully redeemed! \n+${reward.toLocaleString()} added to your bank!`);
+                inputField.value = '';
+                updateUI();
+            } else {
+                alert("Invalid code. Check spelling and matching case!");
+            }
+        }
+
+        function initializeEffects() {
+            const mCanvas = document.getElementById('matrixCanvas');
+            const pCanvas = document.getElementById('particleCanvas');
+            if (mCanvas && pCanvas) {
+                mCanvas.width = window.innerWidth;
+                mCanvas.height = window.innerHeight;
+                pCanvas.width = window.innerWidth;
+                pCanvas.height = window.innerHeight;
+                console.log("Visual canvas backgrounds initialized.");
+            }
+        }
+
+        window.addEventListener('resize', initializeEffects);
+        initializeEffects();
+        updateUI();
+    </script>
+</body>
+</html>
